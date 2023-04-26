@@ -21,6 +21,3 @@ c2.add_pole(ref=[1,1,3], twin_axis=[1,1,0], twin_angle=-109.5)
 
 #and save the file under the name "Twinned GaN".
 c2.save_fig('Twinned GaN')
-
-
-#'test'sasadss
