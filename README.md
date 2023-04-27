@@ -2,9 +2,9 @@
 Simulation of pole figure angles from a given material for any desired reflection. Rotations representing twins can be added.
 
 Tested with:
- -Python 3.11.3 installed from https://www.python.org/ in Windows 11.
- 
- -Python 3.8.10 included with the IDE Spyder installed from https://www.spyder-ide.org/ in Windows 11.
+
+ *Python 3.11.3 installed from https://www.python.org/ in Windows 11.
+ *Python 3.8.10 included with the IDE Spyder installed from https://www.spyder-ide.org/ in Windows 11.
 
 The following Python packages are needed: numpy, matplotlib, and pandas.
 These packages can be installed through pip in a virtual environment (recommended) or global installation of Python.
@@ -19,7 +19,7 @@ If more materials and crystal systems are desired, they can be added in database
 The scripts are still under development.
 
 
-Usage:
+# Usage:
 
 In a new Python script, import the Crystal class from the crystal file:
 
