@@ -7,7 +7,11 @@ Tested with:
  * Python 3.8.10 included with the IDE Spyder installed from https://www.spyder-ide.org/ in Windows 11.
 
 The following Python packages are needed: numpy, matplotlib, and pandas.
-These packages can be installed through pip in a virtual environment (recommended) or global installation of Python.
+These packages can be installed through pip in a virtual environment (recommended) or global installation of Python. Requirements.txt is given to install all the packages trhough: 
+
+```
+pip install -r Requirements.txt
+```
 
 crystal.py contains the main class powering the simulations. Two examples are given in examples.py for the calculation of 113 pole figure of zincblende GaN and
 its twins around the <110> axes by +- 109.5 degress.
