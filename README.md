@@ -43,7 +43,7 @@ c.save_fig(name)
 ```
 wich will generate a png file in the folder SavedFigures.
 
-Example:
+Example (found in examples.py). Note that all orientations are given as Python lists, while materials and crystal systems are given as Python strings:
 ```
 from crystal import Crystal
 
