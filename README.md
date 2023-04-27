@@ -22,21 +22,21 @@ The scripts are still under development.
 # Usage:
 
 In a new Python script, import the Crystal class from the crystal file:
-
+```
 from crystal import Crystal
-
+```
 Then, instantiate with the desired material, crystalline phase, and orientation.
-
+```
 c = Crystal(material, system, orientation_along_z, orientation_along_x)
-
+```
 Finally, add poles to the figure
-
+```
 c.add_pole(reflexion, twin_axis, twin_angle)
-
+```
 with twin_axis and twin_angle the information for twinning. Giving None to both will calculate the reflection for the orientation as is.
 
 Finally, save the file:
-
+```
 c.save_fig(name)
-
+```
 wich will generate a png file in the folder SavedFigures.
