@@ -29,9 +29,10 @@ Then, instantiate with the desired material, crystalline system, and orientation
 ```
 c = Crystal(material, system, orientation_along_z, orientation_along_x)
 ```
-Where ```material``` and ```system``` are strings. 
+Where ```material``` and ```system``` are strings. ```orientation_along_z``` and ```orientation_along_z``` are Python lists.
 
 Finally, add poles to the figure
+
 ```
 c.add_pole(reflexion, twin_axis, twin_angle)
 ```
