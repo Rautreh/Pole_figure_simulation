@@ -25,10 +25,12 @@ In a new Python script, import the Crystal class from the crystal file:
 ```
 from crystal import Crystal
 ```
-Then, instantiate with the desired material, crystalline phase ('hex', 'cub', 'mon', <a>), and orientation.
+Then, instantiate with the desired material, crystalline system, and orientation.
 ```
 c = Crystal(material, system, orientation_along_z, orientation_along_x)
 ```
+Where ```material``` and ```system``` are strings. 
+
 Finally, add poles to the figure
 ```
 c.add_pole(reflexion, twin_axis, twin_angle)
