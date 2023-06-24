@@ -55,7 +55,7 @@ class Crystal:
         sin = np.sin(self.alpha_rad)
         
         if (cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]) > 1 or (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]) > 1 or (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1]) > 1:
-            raise ValueError('Please make sure that:0 < (cos(alphaⱼ)*cos(alphaₖ)-cos(alphaᵢ))/(sin(alphaⱼ)*sin(alphaₖ)) < pi for i =/= j =/= k, with alpha and beta the real and reciprocal angles')
+            raise ValueError('Please make sure that:\n0 < (cos(alpha_j)*cos(alpha_k)-cos(alpha_i))/(sin(alpha_j)*sin(alpha_k)) < pi\nfor i =/= j =/= k, with alpha and beta the real and reciprocal angles')
         
         self.beta_rad = np.arccos([(cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
                                    (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]),
