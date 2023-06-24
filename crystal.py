@@ -6,7 +6,6 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import lines
 import pandas as pd
-#import cmaps
 
 from database import database
 
@@ -50,12 +49,13 @@ class Crystal:
         self.alpha = np.array([self.data_base_latice_paramaeters[self.mat][self.system]['alpha'],
                       self.data_base_latice_paramaeters[self.mat][self.system]['beta'],
                       self.data_base_latice_paramaeters[self.mat][self.system]['gamma']])
-        
+       
         self.alpha_rad = np.deg2rad(self.alpha)
         cos = np.cos(self.alpha_rad)
         sin = np.sin(self.alpha_rad)
+        
         if (cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]) > 1 or (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]) > 1 or (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1]) > 1:
-            raise ValueError('Please make sure that:\n0 < (cos(alphaⱼ)*cos(alphaₖ)-cos(alphaᵢ))/(sin(alphaⱼ)*sin(alphaₖ)) < pi\nfor i =/= j =/= k, with alpha and beta the real and reciprocal angles')
+            raise ValueError('Please make sure that:0 < (cos(alphaⱼ)*cos(alphaₖ)-cos(alphaᵢ))/(sin(alphaⱼ)*sin(alphaₖ)) < pi for i =/= j =/= k, with alpha and beta the real and reciprocal angles')
         
         self.beta_rad = np.arccos([(cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
                                    (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]),
@@ -63,6 +63,7 @@ class Crystal:
         
         self.beta = np.rad2deg(self.beta_rad)
         #in form such that matrix multiplication is correct
+        print(self.beta_rad)
         self.a_vectors = self.a * np.array([[1, cos[2],   cos[1]],
                                             [0, sin[2],   -sin[1]*np.cos(self.beta_rad[0])],
                                             [0, 0,        sin[1]*np.sin(self.beta_rad[0])]])
@@ -76,7 +77,9 @@ class Crystal:
         self.b_vectors = np.transpose(np.array([np.cross(a_vectors[1], a_vectors[2]),
                                    np.cross(a_vectors[2], a_vectors[0]),
                                    np.cross(a_vectors[0], a_vectors[1])])/Volume)
+        
         self.b_inverse = np.linalg.inv(self.b_vectors)
+        print(self.b_vectors)
         
     def indices_to_vectors(self, indices):
         return np.sum(indices * self.b_vectors, axis=1)
