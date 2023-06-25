@@ -1,12 +1,10 @@
 import os
 from collections import Counter
 from itertools import product, permutations
-
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import lines
 import pandas as pd
-
 from database import database
 
 class Crystal:
@@ -20,26 +18,34 @@ class Crystal:
         self.rotation_axis = None
         self.rotation_angle = None
         size = 35
-        self.markers = {'1': {'color': 'r', 'marker': 'o', 'size': size}, '2':{'color': 'b', 'marker': 's', 'size': size}, 
-                        '3':{'color':'m', 'marker': '^', 'size': size}, '4':{'color':'g', 'marker': 'v', 'size': size},
-                        '5': {'color': 'r', 'marker': 'o', 'size': size}, '6':{'color': 'b', 'marker': 's', 'size': size}, 
-                        '7':{'color':'m', 'marker': '^', 'size': size}, '8':{'color':'g', 'marker': 'v', 'size': size},
-                        '9':{'color':'m', 'marker': '^', 'size': size}, '10':{'color':'g', 'marker': 'v', 'size': size},
-                        '11': {'color': 'r', 'marker': 'o', 'size': size}, '12':{'color': 'b', 'marker': 's', 'size': size}, 
-                        '13':{'color':'m', 'marker': '^', 'size': size}, '14':{'color':'g', 'marker': 'v', 'size': size},
-                        '15': {'color': 'r', 'marker': 'o', 'size': size}, '16':{'color': 'b', 'marker': 's', 'size': size}, 
-                        '17':{'color':'m', 'marker': '^', 'size': size}, '18':{'color':'g', 'marker': 'v', 'size': size},
-                        '19':{'color':'m', 'marker': '^', 'size': size}, '20':{'color':'g', 'marker': 'v', 'size': size}}
+        self.markers = {'1': {'color': 'r', 'marker': 'o', 'size': size}, 
+                        '2':{'color': 'b', 'marker': 's', 'size': size},
+                        '3':{'color':'m', 'marker': '^', 'size': size}, 
+                        '4':{'color':'g', 'marker': 'v', 'size': size},
+                        '5': {'color': 'r', 'marker': 'o', 'size': size}, 
+                        '6':{'color': 'b', 'marker': 's', 'size': size}, 
+                        '7':{'color':'m', 'marker': '^', 'size': size}, 
+                        '8':{'color':'g', 'marker': 'v', 'size': size},
+                        '9':{'color':'m', 'marker': '^', 'size': size}, 
+                        '10':{'color':'g', 'marker': 'v', 'size': size},
+                        '11': {'color': 'r', 'marker': 'o', 'size': size}, 
+                        '12':{'color': 'b', 'marker': 's', 'size': size}, 
+                        '13':{'color':'m', 'marker': '^', 'size': size}, 
+                        '14':{'color':'g', 'marker': 'v', 'size': size},
+                        '15': {'color': 'r', 'marker': 'o', 'size': size}, 
+                        '16':{'color': 'b', 'marker': 's', 'size': size}, 
+                        '17':{'color':'m', 'marker': '^', 'size': size}, 
+                        '18':{'color':'g', 'marker': 'v', 'size': size},
+                        '19':{'color':'m', 'marker': '^', 'size': size}, 
+                        '20':{'color':'g', 'marker': 'v', 'size': size}}
         self.dfs = {}
         self.get_database()
         self.lattice_parameters()
         self.orient()
         self.fig, self.ax = self.set_plot()
         
-        
     def get_database(self):
         self.data_base_latice_paramaeters = database
-        
         
     def lattice_parameters(self):
         self.a = np.array([[self.data_base_latice_paramaeters[self.mat][self.system]['a'],
@@ -116,61 +122,26 @@ class Crystal:
         a_angle = np.rad2deg(np.arccos(np.round(a, 5)))
         return a_angle
 
-    def rotate_vector(self, v1, v2, ang):
-        v1 = v1/np.linalg.norm(v1)
-        v2 = v2/np.linalg.norm(v2)
+    def rotate_vector(self, v, u, ang):
+        #v = v/np.linalg.norm(v)
+        u = u/np.linalg.norm(u)
         angle = np.deg2rad(ang)
         if angle == 0:
-            return v1
+            return v
 
-        v2 = np.sin(angle/2)*v2
-
-        q = [np.cos(angle/2), v2[0], v2[1], v2[2]]
-
-        q_1 = [np.cos(angle/2), -v2[0], -v2[1], -v2[2]]
-        v = [0, v1[0], v1[1], v1[2]]
-        Qr = self.quaternion_multiply(q, v)
-
-        Qr = self.quaternion_multiply(Qr, q_1)
-
-        return np.array(Qr[1:])
+        u = np.sin(angle/2)*u
+        
+        u0 = np.cos(angle/2)
+        
+        u_conj = -u
+        
+        uv = u0*v+np.cross(u,v)
+        uv0 = -np.dot(u,v)
+        
+        vr = uv0*u_conj + u0*uv + np.cross(uv, u_conj)
+        
+        return vr
     
-    def quaternion_multiply(self, Q0, Q1):
-        """
-        Multiplies two quaternions.
-
-        Input
-        :param Q0: A 4 element array containing the first quaternion (q01,q11,q21,q31) 
-        :param Q1: A 4 element array containing the second quaternion (q02,q12,q22,q32) 
-
-        Output
-        :return: A 4 element array containing the final quaternion (q03,q13,q23,q33) 
-
-        """
-        # Extract the values from Q0
-        w0 = Q0[0]
-        x0 = Q0[1]
-        y0 = Q0[2]
-        z0 = Q0[3]
-
-        # Extract the values from Q1
-        w1 = Q1[0]
-        x1 = Q1[1]
-        y1 = Q1[2]
-        z1 = Q1[3]
-
-        # Computer the product of the two quaternions, term by term
-        Q0Q1_w = w0 * w1 - x0 * x1 - y0 * y1 - z0 * z1
-        Q0Q1_x = w0 * x1 + x0 * w1 + y0 * z1 - z0 * y1
-        Q0Q1_y = w0 * y1 - x0 * z1 + y0 * w1 + z0 * x1
-        Q0Q1_z = w0 * z1 + x0 * y1 - y0 * x1 + z0 * w1
-
-        # Create a 4 element array containing the final quaternion
-        final_quaternion = np.array([Q0Q1_w, Q0Q1_x, Q0Q1_y, Q0Q1_z])
-
-        # Return a 4 element array containing the final quaternion (q02,q12,q22,q32)
-
-        return final_quaternion
     def calculate_PF_data(ref):
         pass
     

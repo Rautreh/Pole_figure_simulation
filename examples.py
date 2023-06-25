@@ -11,7 +11,7 @@ c1.save_fig('113 GaN')
 
 #We define another crystal named c2, composed of GaN in the cubic system (zincblende), of the class Crystal. 
 #with Miller indices (001)[110]
-c2 = Crystal(mat='GaN', system = 'cub', z=[0,1,1], x = [1,0,0])
+c2 = Crystal(mat='GaN', system = 'cub', z=[0,0,1], x = [1,1,0])
 
 #We add the four twins about the <110> axes by +- 109.5 degrees.
 c2.add_pole(ref=[1,1,3], twin_axis=[1,-1,0], twin_angle=109.5)
