@@ -8,12 +8,12 @@ import pandas as pd
 from database import database
 
 class Crystal:
-    def __init__(self, mat='GaN', system='cub', z=[0,0,1], x = [1,0,0], aproximation='x'):
+    def __init__(self, mat='GaN', system='cub', z=[0,0,1], x = [1,0,0], approximation='x'):
         self.mat = mat
         self.system = system
         self.z_indices = np.array([z])
         self.x_indices = np.array([x])
-        self.aproximation = aproximation
+        self.approximation = approximation
         self.rotation = False
         self.rotation_axis = None
         self.rotation_angle = None
@@ -48,31 +48,31 @@ class Crystal:
         self.data_base_latice_paramaeters = database
         
     def lattice_parameters(self):
-        self.a = np.array([[self.data_base_latice_paramaeters[self.mat][self.system]['a'],
+        self.real_spacing = np.array([[self.data_base_latice_paramaeters[self.mat][self.system]['a'],
                   self.data_base_latice_paramaeters[self.mat][self.system]['b'],
                   self.data_base_latice_paramaeters[self.mat][self.system]['c']]])
         
-        self.alpha = np.array([self.data_base_latice_paramaeters[self.mat][self.system]['alpha'],
+        self.real_ang = np.array([self.data_base_latice_paramaeters[self.mat][self.system]['alpha'],
                       self.data_base_latice_paramaeters[self.mat][self.system]['beta'],
                       self.data_base_latice_paramaeters[self.mat][self.system]['gamma']])
        
-        self.alpha_rad = np.deg2rad(self.alpha)
-        cos = np.cos(self.alpha_rad)
-        sin = np.sin(self.alpha_rad)
+        self.real_ang_rad = np.deg2rad(self.real_ang)
+        cos = np.cos(self.real_ang_rad)
+        sin = np.sin(self.real_ang_rad)
         
         if (cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]) > 1 or (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]) > 1 or (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1]) > 1:
             raise ValueError('Please make sure that:\n0 < (cos(alpha_j)*cos(alpha_k)-cos(alpha_i))/(sin(alpha_j)*sin(alpha_k)) < pi\nfor i =/= j =/= k, with alpha and beta the real and reciprocal angles')
         
-        self.beta_rad = np.arccos([(cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
+        self.recip_ang_rad = np.arccos([(cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
                                    (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]),
                                    (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1])])
         
-        self.beta = np.rad2deg(self.beta_rad)
+        self.recip_ang = np.rad2deg(self.recip_ang_rad)
         #in form such that matrix multiplication is correct
-        print(self.beta_rad)
-        self.a_vectors = self.a * np.array([[1, cos[2],   cos[1]],
-                                            [0, sin[2],   -sin[1]*np.cos(self.beta_rad[0])],
-                                            [0, 0,        sin[1]*np.sin(self.beta_rad[0])]])
+        print(self.recip_ang_rad)
+        self.a_vectors = self.real_spacing * np.array([[1, cos[2],   cos[1]],
+                                            [0, sin[2],   -sin[1]*np.cos(self.recip_ang_rad[0])],
+                                            [0, 0,        sin[1]*np.sin(self.recip_ang_rad[0])]])
         
         self.a_vectors_inv = np.linalg.inv(self.a_vectors)
         
@@ -112,7 +112,7 @@ class Crystal:
         if  angle_zx == 0 or angle_zx == 180:
             raise ValueError('z and x directions are the same.')
         
-        if self.aproximation != 'z':
+        if self.approximation != 'z':
             self.x_vector = self.rotate_vector(self.x_vector, self.y_vector, 90 - angle_zx )
         else:
             self.z_vector = self.rotate_vector(self.z_vector, self.y_vector, angle_zx - 90 )
@@ -142,13 +142,8 @@ class Crystal:
         
         return vr
     
-    def calculate_PF_data(ref):
-        pass
-    
     def planes_in_family(self, ref, twin=False, twin_axis=None, twin_angle=None):
         '''
-
-
         Parameters
         ----------
         ref : List
@@ -230,7 +225,6 @@ class Crystal:
         self.dfs[df_nr]['Twin_angle'] = twin_angle
         self.dfs[df_nr]['df'] = df               
         
-                
     def clear_plot(self):
         self.dfs = {}
         self.PF_plot()
@@ -285,8 +279,6 @@ class Crystal:
 
     def PF_plot(self, ref=None, sim=True, stereographic=False, scale='log'):
         '''
-
-
         Parameters
         ----------
         alpha : TYPE
@@ -331,18 +323,8 @@ class Crystal:
             if sim:
                 a = self.ax.scatter(x, y, c=color,marker=marker, s=size)
             
-            # under construction:
-            # else:
-            #     if scale == 'log':
-            #         a = self.ax.tricontourf(x, y, df.Intensity, cmap=cmaps.precip3_16lev,
-            #                            c_dir=colors.Logc_dir(vmin=df.Intensity.min(), vmax=df.Intensity.max()))
-            #     else:
-            #         a = self.ax.tricontourf(x, y, df.Intensity, cmap=cmaps.precip3_16lev)
-    
-            
         self.add_artists(self.ax, xlim, ylim, xlim2)
 
-        
     def rotate_plot(self, rotation_axis, rotation_angle):
         self.rotation = True
         self.rotation_axis = rotation_axis
@@ -423,6 +405,7 @@ class Crystal:
                 circ = plt.Circle((0, 0), x/90, facecolor='none', edgecolor='black', linewidth=0.25, linestyle='dashed')
             ax.add_patch(circ)
         return
+    
     def save_fig(self, name):
         saves_dir = os.getcwd() + '/SavedFigures' 
         if not os.path.exists(saves_dir):
