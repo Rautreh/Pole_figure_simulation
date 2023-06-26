@@ -166,7 +166,8 @@ class Crystal:
         ref : List
             DESCRIPTION. Reflection hkl
         phase : string, optional
-            DESCRIPTION. 'c' for cubic, 'h' for hexagonal. The default is 'c'.
+            DESCRIPTION. 'c' for cubic, 'h' for hexagonal. 
+                        The default is 'c'.
 
         Returns
         -------
@@ -375,11 +376,13 @@ class Crystal:
             chis = []
             phis = []
             for ref in self.dfs[key]['df']['Planes']:
-                chi, phi = self.calc_chi_phi(ref, self.dfs[key]['Twin'], 
-                                                   self.dfs[key]['Twin_axis'], 
-                                                   self.dfs[key]['Twin_angle'], 
-                                                   True,  rotation_axis, 
-                                                   rotation_angle)
+                chi, phi = self.calc_chi_phi(
+                            ref, self.dfs[key]['Twin'], 
+                            self.dfs[key]['Twin_axis'], 
+                            self.dfs[key]['Twin_angle'], 
+                            True,  rotation_axis, 
+                            rotation_angle)
+                
                 chis.append(chi)
                 phis.append(phi)
             self.dfs[key]['df']['chi'] = chis
