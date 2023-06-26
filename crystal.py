@@ -77,7 +77,6 @@ class Crystal:
         
         self.recip_ang = np.rad2deg(self.recip_ang_rad)
         #in form such that matrix multiplication is correct
-        print(self.recip_ang_rad)
         self.real_v = self.real_spacing * np.array([
                     [1, cos[2],   cos[1]],
                     [0, sin[2],   -sin[1]*np.cos(self.recip_ang_rad[0])],
@@ -96,7 +95,6 @@ class Crystal:
                             np.cross(real_v[0], real_v[1])])/Volume)
         
         self.b_inverse = np.linalg.inv(self.recip_v)
-        print(self.recip_v)
         
     def indices_to_vectors(self, indices):
         return np.sum(indices * self.recip_v, axis=1)
