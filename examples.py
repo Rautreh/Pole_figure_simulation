@@ -1,6 +1,7 @@
 from crystal import Crystal
 
-#We first define a crystal named c1, composed of GaN in the cubic system (zincblende), of the class Crystal. 
+#We first define a crystal named c1, composed of GaN in the cubic system 
+#zincblende), of the class Crystal. 
 #with Miller indices (001)[110]
 c1 = Crystal(mat='GaN', system = 'hex', z=[0,0,1], x = [1,1,0])
 
@@ -9,7 +10,8 @@ c1.add_pole([1,1,3], None, None)
 #and save it under the name "113 GaN"
 c1.save_fig('113 GaN')
 
-#We define another crystal named c2, composed of GaN in the cubic system (zincblende), of the class Crystal. 
+#We define another crystal named c2, composed of GaN in the cubic system 
+#(zincblende), of the class Crystal. 
 #with Miller indices (001)[110]
 c2 = Crystal(mat='GaN', system = 'cub', z=[0,0,1], x = [1,1,0])
 

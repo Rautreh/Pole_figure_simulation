@@ -8,7 +8,8 @@ import pandas as pd
 from database import database
 
 class Crystal:
-    def __init__(self, mat='GaN', system='cub', z=[0,0,1], x = [1,0,0], approximation='x'):
+    def __init__(self, mat='GaN', system='cub', z=[0,0,1], x = [1,0,0], 
+                 approximation='x'):
         self.mat = mat
         self.system = system
         self.z_indices = np.array([z])
@@ -45,17 +46,17 @@ class Crystal:
         self.fig, self.ax = self.set_plot()
         
     def get_database(self):
-        self.data_base_latice_paramaeters = database
+        self.data_base = database
         
         self.real_spacing = np.array([
-            [self.data_base_latice_paramaeters[self.mat][self.system]['a'],
-             self.data_base_latice_paramaeters[self.mat][self.system]['b'],
-             self.data_base_latice_paramaeters[self.mat][self.system]['c']]])
+            [self.data_base[self.mat][self.system]['a'],
+             self.data_base[self.mat][self.system]['b'],
+             self.data_base[self.mat][self.system]['c']]])
         
         self.real_ang = np.array(
-            [self.data_base_latice_paramaeters[self.mat][self.system]['alpha'],
-             self.data_base_latice_paramaeters[self.mat][self.system]['beta'],
-             self.data_base_latice_paramaeters[self.mat][self.system]['gamma']])
+            [self.data_base[self.mat][self.system]['alpha'],
+             self.data_base[self.mat][self.system]['beta'],
+             self.data_base[self.mat][self.system]['gamma']])
        
         self.real_ang_rad = np.deg2rad(self.real_ang)
         
@@ -67,10 +68,7 @@ class Crystal:
         if ((cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]) > 1 or 
         (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]) > 1 or 
         (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1]) > 1):
-            raise ValueError('Please make sure that:\n0 < (cos(alpha_j)*cos' 
-                             '(alpha_k)-cos(alpha_i))/(sin(alpha_j)*sin(alpha_k))'
-                             ' < pi\nfor i =/= j =/= k, with alpha and beta the'
-                             ' real and reciprocal angles')
+            raise ValueError('Please check angles in database')
         
         self.recip_ang_rad = np.arccos([
                             (cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
@@ -80,34 +78,34 @@ class Crystal:
         self.recip_ang = np.rad2deg(self.recip_ang_rad)
         #in form such that matrix multiplication is correct
         print(self.recip_ang_rad)
-        self.real_vectors = self.real_spacing * np.array([
-                            [1, cos[2],   cos[1]],
-                            [0, sin[2],   -sin[1]*np.cos(self.recip_ang_rad[0])],
-                            [0, 0,        sin[1]*np.sin(self.recip_ang_rad[0])]])
+        self.real_v = self.real_spacing * np.array([
+                    [1, cos[2],   cos[1]],
+                    [0, sin[2],   -sin[1]*np.cos(self.recip_ang_rad[0])],
+                    [0, 0,        sin[1]*np.sin(self.recip_ang_rad[0])]])
         
-        self.real_vectors_inv = np.linalg.inv(self.real_vectors)
+        self.real_v_inv = np.linalg.inv(self.real_v)
         
-        #transposed so that each element of real_vectors is a real vector a, b and c
-        real_vectors = np.transpose(self.real_vectors)
-        Volume = np.linalg.det(self.real_vectors)
+        #transposed so that each element of real_v is a vector a, b and c
+        real_v = np.transpose(self.real_v)
+        Volume = np.linalg.det(self.real_v)
         #transposed back to matrix multiply with miller indices
         
-        self.recip_vectors = np.transpose(np.array([
-                            np.cross(real_vectors[1], real_vectors[2]),
-                            np.cross(real_vectors[2], real_vectors[0]),
-                            np.cross(real_vectors[0], real_vectors[1])])/Volume)
+        self.recip_v = np.transpose(np.array([
+                            np.cross(real_v[1], real_v[2]),
+                            np.cross(real_v[2], real_v[0]),
+                            np.cross(real_v[0], real_v[1])])/Volume)
         
-        self.b_inverse = np.linalg.inv(self.recip_vectors)
-        print(self.recip_vectors)
+        self.b_inverse = np.linalg.inv(self.recip_v)
+        print(self.recip_v)
         
     def indices_to_vectors(self, indices):
-        return np.sum(indices * self.recip_vectors, axis=1)
+        return np.sum(indices * self.recip_v, axis=1)
     
     def vector_to_indices(self, vector):
         return np.sum(vector * self.b_inverse, axis=1)
     
     def interplanar_distance(self, indices):
-        H = np.sum(indices * self.recip_vectors, axis=1)
+        H = np.sum(indices * self.recip_v, axis=1)
         if np.linalg.norm(H) == 0:
             return 0
         # Interplanar distance
@@ -120,17 +118,20 @@ class Crystal:
         
         self.y_vector = np.cross(self.z_vector, self.x_vector)
         
-        angle_zx = self.angle_between_vectors(self.z_vector, self.x_vector)
+        angle_zx = self.angle_between_vectors(self.z_vector, 
+                                              self.x_vector)
 
         if  angle_zx == 0 or angle_zx == 180:
             raise ValueError('z and x directions are the same.')
         
         if self.approximation != 'z':
             self.x_vector = self.rotate_vector(self.x_vector, 
-                                               self.y_vector, 90 - angle_zx )
+                                               self.y_vector, 
+                                               90 - angle_zx )
         else:
             self.z_vector = self.rotate_vector(self.z_vector, 
-                                               self.y_vector, angle_zx - 90 )
+                                               self.y_vector, 
+                                               angle_zx - 90 )
         
     def angle_between_vectors(self, v1, v2):
         a = np.dot(v1, v2)/(np.linalg.norm(v1) * np.linalg.norm(v2))
@@ -157,7 +158,8 @@ class Crystal:
         
         return vr
     
-    def planes_in_family(self, ref, twin=False, twin_axis=None, twin_angle=None):
+    def planes_in_family(self, ref, twin=False, twin_axis=None, 
+                         twin_angle=None):
         '''
         Parameters
         ----------
@@ -175,16 +177,16 @@ class Crystal:
         planes_in_family = []
         plane_in_df = False
         df = pd.DataFrame()
-        alphas = []
-        betas = []
+        chis = []
+        phis = []
         if len(self.dfs) != 0:
-            for key in self.dfs:
-                if (self.dfs[key]['Twin_axis'] == twin_axis and 
-                    self.dfs[key]['Twin_angle'] == twin_angle):
+            for k in self.dfs:
+                if (self.dfs[k]['Twin_axis'] == twin_axis and 
+                    self.dfs[k]['Twin_angle'] == twin_angle):
             
-                    if self.dfs[key]['ref'] == ref:
+                    if self.dfs[k]['ref'] == ref:
                         return
-                    elif tuple(ref) in self.dfs[key]['df']['Planes'].tolist():
+                    elif tuple(ref) in self.dfs[k]['df']['Planes'].tolist():
                         return
             for key in self.dfs:    
                 if self.dfs[key]['ref'] == ref:
@@ -228,24 +230,26 @@ class Crystal:
             plane_combination = [*Counter([*product(indices, repeat=3)])] 
             for plane in plane_combination:
                 d_hkl_pl = self.interplanar_distance(plane)
-                # If interplanar distance is the same, belongs to the same family
+                # If interplanar distance is the same, 
+                # it belongs to the same family
                 if abs((d_hkl-d_hkl_pl)/d_hkl) < 0.001: 
                     planes_in_family.append(plane)
         
         for plane in planes_in_family:
-            alpha, beta = self.calc_alpha_beta(
+            chi, phi = self.calc_chi_phi(
                         plane, twin, twin_axis, 
                         twin_angle, self.rotation, 
                         self.rotation_axis, self.rotation_angle)
             
-            alphas.append(alpha)
-            betas.append(beta)
+            chis.append(chi)
+            phis.append(phi)
         df['Planes'] = planes_in_family
-        df['Alpha'] = alphas
-        df['Beta'] = betas
+        df['chi'] = chis
+        df['phi'] = phis
         
         df_nr = str(len(self.dfs)+1)
-        self.dfs[df_nr] = {'ref':'', 'Twin': twin, 'Twin_axis':None, 'Twin_angle':None}
+        self.dfs[df_nr] = {'ref':'', 'Twin': twin, 'Twin_axis':None, 
+                           'Twin_angle':None}
         
         self.dfs[df_nr]['ref'] = ref
         self.dfs[df_nr]['Twin_axis'] = twin_axis
@@ -256,43 +260,46 @@ class Crystal:
         self.dfs = {}
         self.PF_plot()
 
-    def calc_alpha_beta(self, plane, twin, twin_axis, twin_angle, rotation, 
-                        rotation_axis, rotation_angle):
+    def calc_chi_phi(self, plane, twin, twin_axis, twin_angle, 
+                        rotation, rotation_axis, rotation_angle):
         
         plane_vector = self.indices_to_vectors(plane)
         if twin:
             twin_vector = self.indices_to_vectors(twin_axis)
-            plane_vector = self.rotate_vector(plane_vector, twin_vector, 
+            plane_vector = self.rotate_vector(plane_vector, 
+                                              twin_vector, 
                                               twin_angle)
             
         if rotation:
             rotation_vector = self.indices_to_vectors(rotation_axis)
-            plane_vector = self.rotate_vector(plane_vector, rotation_vector, 
+            plane_vector = self.rotate_vector(plane_vector, 
+                                              rotation_vector, 
                                               rotation_angle)
             
-        alpha = self.angle_between_vectors(self.z_vector, plane_vector)
+        chi = self.angle_between_vectors(self.z_vector, plane_vector)
         proj_v = self.proj(plane_vector, self.z_vector)
         # To see on which side of the Y plane is.
         v1dot = np.dot(proj_v, self.y_vector) 
-        beta = self.angle_between_vectors(proj_v, self.x_vector)
+        phi = self.angle_between_vectors(proj_v, self.x_vector)
         
         if v1dot < 0:
-            beta = 360 - beta
-        
-        if alpha > 90: #Not on the visible side, appears on the opposite side.
-            beta += 180 
-            alpha = 180 - alpha
+            phi = 360 - phi
             
-            if beta > 360:
-                beta -= 360
+        #Not on the visible side, appears on the opposite side.
+        if chi > 90: 
+            phi += 180 
+            chi = 180 - chi
+            
+            if phi > 360:
+                phi -= 360
                 
-        if alpha == 0:
-            beta = 0
+        if chi == 0:
+            phi = 0
         
-        alpha = np.round(alpha, 2)
-        beta = np.round(beta, 2)
+        chi = np.round(chi, 2)
+        phi = np.round(phi, 2)
             
-        return alpha, beta
+        return chi, phi
     
     def proj(self, vector, plane_vector):
         v = np.array(vector)
@@ -306,16 +313,19 @@ class Crystal:
             twin = False
         else:
             twin = True
-        self.planes_in_family(ref, twin=twin, twin_axis=twin_axis, twin_angle=twin_angle)
+        self.planes_in_family(ref, twin=twin, 
+                              twin_axis=twin_axis, 
+                              twin_angle=twin_angle)
+        
         self.PF_plot()
 
     def PF_plot(self, ref=None, sim=True, stereographic=False, scale='log'):
         '''
         Parameters
         ----------
-        alpha : TYPE
+        chi : TYPE
             DESCRIPTION.
-        beta : TYPE
+        phi : TYPE
             DESCRIPTION.
         sim : TYPE, optional
             DESCRIPTION. The default is True.
@@ -342,8 +352,8 @@ class Crystal:
             marker = self.markers[str(number_pf_plots)]['marker']
             size = self.markers[str(number_pf_plots)]['size']
             number_pf_plots += 1
-            b_dirmuth = np.deg2rad(df.Beta.to_numpy())
-            dip = df.Alpha.to_numpy()
+            b_dirmuth = np.deg2rad(df.phi.to_numpy())
+            dip = df.chi.to_numpy()
             # Rigaku data is given reversed
             reverse = not sim
             if reverse:
@@ -362,14 +372,18 @@ class Crystal:
         self.rotation_axis = rotation_axis
         self.rotation_angle = rotation_angle
         for key in self.dfs:
-            alphas = []
-            betas = []
+            chis = []
+            phis = []
             for ref in self.dfs[key]['df']['Planes']:
-                alpha, beta = self.calc_alpha_beta(ref, self.dfs[key]['Twin'], self.dfs[key]['Twin_axis'], self.dfs[key]['Twin_angle'], True,  rotation_axis, rotation_angle)
-                alphas.append(alpha)
-                betas.append(beta)
-            self.dfs[key]['df']['Alpha'] = alphas
-            self.dfs[key]['df']['Beta'] = betas
+                chi, phi = self.calc_chi_phi(ref, self.dfs[key]['Twin'], 
+                                                   self.dfs[key]['Twin_axis'], 
+                                                   self.dfs[key]['Twin_angle'], 
+                                                   True,  rotation_axis, 
+                                                   rotation_angle)
+                chis.append(chi)
+                phis.append(phi)
+            self.dfs[key]['df']['chi'] = chis
+            self.dfs[key]['df']['phi'] = phis
         self.PF_plot()
         
     def set_plot(self):
@@ -392,16 +406,25 @@ class Crystal:
 
         self.ax.axis('equal')  # equal aspect ratio
         self.ax.axis('off')  # remove the box
-        self.ax.add_artist(lines.Line2D([xlim + 0.05, xlim + 0.05], [-1, 1], color='black', linewidth=1))
+        self.ax.add_artist(lines.Line2D([xlim + 0.05, xlim + 0.05], [-1, 1], 
+                                        color='black', linewidth=1))
+        
         self.ax.set_xlim(-1.5, 1.3)
         self.ax.set_ylim(-1.3, 1.3)
-        ax.add_artist(lines.Line2D([xlim, ylim], [-1, -1], color='black', linewidth=1))
-        ax.add_artist(lines.Line2D([xlim, ylim], [1, 1], color='black', linewidth=1))
-        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [-0.33, -0.33], color='black', linewidth=1))
-        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [0.33, 0.33], color='black', linewidth=1))
-        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [-0.66, -0.66], color='black', linewidth=1))
-        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [0.66, 0.66], color='black', linewidth=1))
-        ax.add_artist(lines.Line2D([xlim, ylim], [0, 0], color='black', linewidth=1))
+        ax.add_artist(lines.Line2D([xlim, ylim], [-1, -1], color='black', 
+                                   linewidth=1))
+        ax.add_artist(lines.Line2D([xlim, ylim], [1, 1], color='black', 
+                                   linewidth=1))
+        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [-0.33, -0.33], 
+                                   color='black', linewidth=1))
+        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [0.33, 0.33], 
+                                   color='black', linewidth=1))
+        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [-0.66, -0.66], 
+                                   color='black', linewidth=1))
+        ax.add_artist(lines.Line2D([xlim + 0.03, ylim], [0.66, 0.66], 
+                                   color='black', linewidth=1))
+        ax.add_artist(lines.Line2D([xlim, ylim], [0, 0], color='black', 
+                                   linewidth=1))
 
         ax.text(xlim2, -1.03, '90$^\circ$')
         ax.text(xlim2, 0.97, '90$^\circ$')
@@ -421,20 +444,28 @@ class Crystal:
             xcoords = (r*np.sin(np.deg2rad(x)), np.sin(np.deg2rad(x)))
             ycoords = (r*np.cos(np.deg2rad(x)), np.cos(np.deg2rad(x)))
             if x == 0:
-                txtcoords = (1.13*np.cos(np.deg2rad(x)), 1.13*np.sin(np.deg2rad(x)))
+                txtcoords = (1.13*np.cos(np.deg2rad(x)), 
+                             1.13*np.sin(np.deg2rad(x)))
             else:
-                txtcoords = (1.16*np.cos(np.deg2rad(x)), 1.16*np.sin(np.deg2rad(x)))
-            ax.text(txtcoords[0], txtcoords[1], str(x) + '$^\circ$', ha='center', va='center')
+                txtcoords = (1.16*np.cos(np.deg2rad(x)), 
+                             1.16*np.sin(np.deg2rad(x)))
+            ax.text(txtcoords[0], txtcoords[1], str(x) + 
+                    '$^\circ$', ha='center', va='center')
 
-            ax.add_artist(lines.Line2D(xcoords, ycoords, color='black', linewidth=0.25))
+            ax.add_artist(lines.Line2D(xcoords, ycoords, 
+                                       color='black', linewidth=0.25))
 
         for x in range(0, 90, 30):
             if stereographic:
                 dip = np.deg2rad(90 - x)
                 ycir = np.tan((np.pi / 4.0) - (dip / 2)) * np.cos(0)
-                circ = plt.Circle((0, 0), ycir, facecolor='none', edgecolor='black', linewidth=0.25, linestyle='dashed')
+                circ = plt.Circle((0, 0), ycir, facecolor='none', 
+                                  edgecolor='black', linewidth=0.25, 
+                                  linestyle='dashed')
             else:
-                circ = plt.Circle((0, 0), x/90, facecolor='none', edgecolor='black', linewidth=0.25, linestyle='dashed')
+                circ = plt.Circle((0, 0), x/90, facecolor='none', 
+                                  edgecolor='black', linewidth=0.25, 
+                                  linestyle='dashed')
             ax.add_patch(circ)
         return
     
