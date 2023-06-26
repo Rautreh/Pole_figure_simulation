@@ -47,54 +47,67 @@ class Crystal:
     def get_database(self):
         self.data_base_latice_paramaeters = database
         
-    def lattice_parameters(self):
-        self.real_spacing = np.array([[self.data_base_latice_paramaeters[self.mat][self.system]['a'],
-                  self.data_base_latice_paramaeters[self.mat][self.system]['b'],
-                  self.data_base_latice_paramaeters[self.mat][self.system]['c']]])
+        self.real_spacing = np.array([
+            [self.data_base_latice_paramaeters[self.mat][self.system]['a'],
+             self.data_base_latice_paramaeters[self.mat][self.system]['b'],
+             self.data_base_latice_paramaeters[self.mat][self.system]['c']]])
         
-        self.real_ang = np.array([self.data_base_latice_paramaeters[self.mat][self.system]['alpha'],
-                      self.data_base_latice_paramaeters[self.mat][self.system]['beta'],
-                      self.data_base_latice_paramaeters[self.mat][self.system]['gamma']])
+        self.real_ang = np.array(
+            [self.data_base_latice_paramaeters[self.mat][self.system]['alpha'],
+             self.data_base_latice_paramaeters[self.mat][self.system]['beta'],
+             self.data_base_latice_paramaeters[self.mat][self.system]['gamma']])
        
         self.real_ang_rad = np.deg2rad(self.real_ang)
+        
+    def lattice_parameters(self):
+        
         cos = np.cos(self.real_ang_rad)
         sin = np.sin(self.real_ang_rad)
         
-        if (cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]) > 1 or (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]) > 1 or (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1]) > 1:
-            raise ValueError('Please make sure that:\n0 < (cos(alpha_j)*cos(alpha_k)-cos(alpha_i))/(sin(alpha_j)*sin(alpha_k)) < pi\nfor i =/= j =/= k, with alpha and beta the real and reciprocal angles')
+        if ((cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]) > 1 or 
+        (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]) > 1 or 
+        (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1]) > 1):
+            raise ValueError('Please make sure that:\n0 < (cos(alpha_j)*cos' 
+                             '(alpha_k)-cos(alpha_i))/(sin(alpha_j)*sin(alpha_k))'
+                             ' < pi\nfor i =/= j =/= k, with alpha and beta the'
+                             ' real and reciprocal angles')
         
-        self.recip_ang_rad = np.arccos([(cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
-                                   (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]),
-                                   (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1])])
+        self.recip_ang_rad = np.arccos([
+                            (cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
+                            (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]),
+                            (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1])])
         
         self.recip_ang = np.rad2deg(self.recip_ang_rad)
         #in form such that matrix multiplication is correct
         print(self.recip_ang_rad)
-        self.a_vectors = self.real_spacing * np.array([[1, cos[2],   cos[1]],
-                                            [0, sin[2],   -sin[1]*np.cos(self.recip_ang_rad[0])],
-                                            [0, 0,        sin[1]*np.sin(self.recip_ang_rad[0])]])
+        self.real_vectors = self.real_spacing * np.array([
+                            [1, cos[2],   cos[1]],
+                            [0, sin[2],   -sin[1]*np.cos(self.recip_ang_rad[0])],
+                            [0, 0,        sin[1]*np.sin(self.recip_ang_rad[0])]])
         
-        self.a_vectors_inv = np.linalg.inv(self.a_vectors)
+        self.real_vectors_inv = np.linalg.inv(self.real_vectors)
         
-        #transposed so that each element of a_vectors is a real vector a, b and c
-        a_vectors = np.transpose(self.a_vectors)
-        Volume = np.linalg.det(self.a_vectors)
+        #transposed so that each element of real_vectors is a real vector a, b and c
+        real_vectors = np.transpose(self.real_vectors)
+        Volume = np.linalg.det(self.real_vectors)
         #transposed back to matrix multiply with miller indices
-        self.b_vectors = np.transpose(np.array([np.cross(a_vectors[1], a_vectors[2]),
-                                   np.cross(a_vectors[2], a_vectors[0]),
-                                   np.cross(a_vectors[0], a_vectors[1])])/Volume)
         
-        self.b_inverse = np.linalg.inv(self.b_vectors)
-        print(self.b_vectors)
+        self.recip_vectors = np.transpose(np.array([
+                            np.cross(real_vectors[1], real_vectors[2]),
+                            np.cross(real_vectors[2], real_vectors[0]),
+                            np.cross(real_vectors[0], real_vectors[1])])/Volume)
+        
+        self.b_inverse = np.linalg.inv(self.recip_vectors)
+        print(self.recip_vectors)
         
     def indices_to_vectors(self, indices):
-        return np.sum(indices * self.b_vectors, axis=1)
+        return np.sum(indices * self.recip_vectors, axis=1)
     
     def vector_to_indices(self, vector):
         return np.sum(vector * self.b_inverse, axis=1)
     
     def interplanar_distance(self, indices):
-        H = np.sum(indices * self.b_vectors, axis=1)
+        H = np.sum(indices * self.recip_vectors, axis=1)
         if np.linalg.norm(H) == 0:
             return 0
         # Interplanar distance
@@ -113,9 +126,11 @@ class Crystal:
             raise ValueError('z and x directions are the same.')
         
         if self.approximation != 'z':
-            self.x_vector = self.rotate_vector(self.x_vector, self.y_vector, 90 - angle_zx )
+            self.x_vector = self.rotate_vector(self.x_vector, 
+                                               self.y_vector, 90 - angle_zx )
         else:
-            self.z_vector = self.rotate_vector(self.z_vector, self.y_vector, angle_zx - 90 )
+            self.z_vector = self.rotate_vector(self.z_vector, 
+                                               self.y_vector, angle_zx - 90 )
         
     def angle_between_vectors(self, v1, v2):
         a = np.dot(v1, v2)/(np.linalg.norm(v1) * np.linalg.norm(v2))
@@ -164,7 +179,9 @@ class Crystal:
         betas = []
         if len(self.dfs) != 0:
             for key in self.dfs:
-                if self.dfs[key]['Twin_axis'] == twin_axis and self.dfs[key]['Twin_angle'] == twin_angle:
+                if (self.dfs[key]['Twin_axis'] == twin_axis and 
+                    self.dfs[key]['Twin_angle'] == twin_angle):
+            
                     if self.dfs[key]['ref'] == ref:
                         return
                     elif tuple(ref) in self.dfs[key]['df']['Planes'].tolist():
@@ -183,7 +200,8 @@ class Crystal:
         if self.system == 'hex' and not plane_in_df:
             refh = np.array([ref[0], ref[1], -ref[0] - ref[1], ref[2]])
             planesh = []
-            perm = set([*Counter(permutations(refh[0:3]))] + [*Counter(permutations(-refh[0:3]))])
+            perm = set([*Counter(permutations(refh[0:3]))] + 
+                       [*Counter(permutations(-refh[0:3]))])
             for i in perm:
                 lst = [*i]
                 lst.append(ref[-1])
@@ -202,16 +220,24 @@ class Crystal:
 
         elif not plane_in_df:
             d_hkl = self.interplanar_distance(ref)
-            indices = [*Counter(ref)]  # Takes indices of plane
-            indices.extend(-np.array(indices))  # Adds its negative indices
-            plane_combination = [*Counter([*product(indices, repeat=3)])]  # Obtains all possible combinations
+            # Takes indices of plane
+            indices = [*Counter(ref)]  
+            # Adds its negative indices
+            indices.extend(-np.array(indices))  
+            # Obtains all possible combinations
+            plane_combination = [*Counter([*product(indices, repeat=3)])] 
             for plane in plane_combination:
                 d_hkl_pl = self.interplanar_distance(plane)
-                if abs((d_hkl-d_hkl_pl)/d_hkl) < 0.001: # If interplanar distance is the same, belongs to the same family
+                # If interplanar distance is the same, belongs to the same family
+                if abs((d_hkl-d_hkl_pl)/d_hkl) < 0.001: 
                     planes_in_family.append(plane)
         
         for plane in planes_in_family:
-            alpha, beta = self.calc_alpha_beta(plane, twin, twin_axis, twin_angle, self.rotation, self.rotation_axis, self.rotation_angle)
+            alpha, beta = self.calc_alpha_beta(
+                        plane, twin, twin_axis, 
+                        twin_angle, self.rotation, 
+                        self.rotation_axis, self.rotation_angle)
+            
             alphas.append(alpha)
             betas.append(beta)
         df['Planes'] = planes_in_family
@@ -220,6 +246,7 @@ class Crystal:
         
         df_nr = str(len(self.dfs)+1)
         self.dfs[df_nr] = {'ref':'', 'Twin': twin, 'Twin_axis':None, 'Twin_angle':None}
+        
         self.dfs[df_nr]['ref'] = ref
         self.dfs[df_nr]['Twin_axis'] = twin_axis
         self.dfs[df_nr]['Twin_angle'] = twin_angle
@@ -229,20 +256,24 @@ class Crystal:
         self.dfs = {}
         self.PF_plot()
 
-    def calc_alpha_beta(self, plane, twin, twin_axis, twin_angle, rotation, rotation_axis, rotation_angle):
+    def calc_alpha_beta(self, plane, twin, twin_axis, twin_angle, rotation, 
+                        rotation_axis, rotation_angle):
+        
         plane_vector = self.indices_to_vectors(plane)
         if twin:
             twin_vector = self.indices_to_vectors(twin_axis)
-            plane_vector = self.rotate_vector(plane_vector, twin_vector, twin_angle)
+            plane_vector = self.rotate_vector(plane_vector, twin_vector, 
+                                              twin_angle)
             
         if rotation:
             rotation_vector = self.indices_to_vectors(rotation_axis)
-            plane_vector = self.rotate_vector(plane_vector, rotation_vector, rotation_angle)
+            plane_vector = self.rotate_vector(plane_vector, rotation_vector, 
+                                              rotation_angle)
             
         alpha = self.angle_between_vectors(self.z_vector, plane_vector)
         proj_v = self.proj(plane_vector, self.z_vector)
-        
-        v1dot = np.dot(proj_v, self.y_vector) # To see on which side of the Y plane is.
+        # To see on which side of the Y plane is.
+        v1dot = np.dot(proj_v, self.y_vector) 
         beta = self.angle_between_vectors(proj_v, self.x_vector)
         
         if v1dot < 0:
@@ -265,9 +296,10 @@ class Crystal:
     
     def proj(self, vector, plane_vector):
         v = np.array(vector)
-        plane_vector = np.array(plane_vector)
-        proj_v_on_plane = v - np.dot(v, plane_vector)/np.dot(plane_vector, plane_vector) * plane_vector
-        return proj_v_on_plane
+        plane = np.array(plane_vector)
+        
+        proj = (v - np.dot(v, plane)/np.dot(plane, plane) * plane)
+        return proj
     
     def add_pole(self, ref, twin_axis, twin_angle):
         if twin_axis == None:
