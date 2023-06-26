@@ -12,9 +12,6 @@ class Crystal:
                  approximation='x'):
         self.mat = mat
         self.system = system
-        self.z_indices = np.array([z])
-        self.x_indices = np.array([x])
-        self.approximation = approximation
         self.rotation = False
         self.rotation_axis = None
         self.rotation_angle = None
@@ -42,18 +39,18 @@ class Crystal:
         self.dfs = {}
         self.get_database()
         self.lattice_parameters()
-        self.orient()
+        self.orient(z,x, approximation)
         self.fig, self.ax = self.set_plot()
         
     def get_database(self):
         self.data_base = database
         
-        self.real_spacing = np.array([
+        self.real_spacing = (
             [self.data_base[self.mat][self.system]['a'],
              self.data_base[self.mat][self.system]['b'],
-             self.data_base[self.mat][self.system]['c']]])
+             self.data_base[self.mat][self.system]['c']])
         
-        self.real_ang = np.array(
+        self.real_ang = (
             [self.data_base[self.mat][self.system]['alpha'],
              self.data_base[self.mat][self.system]['beta'],
              self.data_base[self.mat][self.system]['gamma']])
@@ -61,45 +58,43 @@ class Crystal:
         self.real_ang_rad = np.deg2rad(self.real_ang)
         
     def lattice_parameters(self):
+        a, b, c = self.real_spacing
+        cosal, cosbe, cosga = np.cos(self.real_ang_rad)
+        sinal, sinbe, singa = np.sin(self.real_ang_rad)
         
-        cos = np.cos(self.real_ang_rad)
-        sin = np.sin(self.real_ang_rad)
-        
-        if ((cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]) > 1 or 
-        (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]) > 1 or 
-        (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1]) > 1):
+        try:
+            recip_ang_rad = np.arccos([
+                            (cosbe*cosga-cosal)/(sinbe*singa),
+                            (cosga*cosal-cosbe)/(singa*sinal),
+                            (cosal*cosbe-cosga)/(sinal*sinbe)])
+            
+            cosal_r = np.cos(recip_ang_rad[0])
+            sinal_r = np.sin(recip_ang_rad[0])
+
+        except:
             raise ValueError('Please check angles in database')
         
-        self.recip_ang_rad = np.arccos([
-                            (cos[1]*cos[2]-cos[0])/(sin[1]*sin[2]),
-                            (cos[2]*cos[0]-cos[1])/(sin[2]*sin[0]),
-                            (cos[0]*cos[1]-cos[2])/(sin[0]*sin[1])])
+        self.recip_ang = np.rad2deg(recip_ang_rad)
+
+        self.real_v = np.array([ 
+                        [a,       0,                0],
+                        [b*cosga, b*singa,          0],
+                        [c*cosbe, -c*sinbe*cosal_r, c*sinbe*sinal_r]])
         
-        self.recip_ang = np.rad2deg(self.recip_ang_rad)
-        #in form such that matrix multiplication is correct
-        self.real_v = self.real_spacing * np.array([
-                    [1, cos[2],   cos[1]],
-                    [0, sin[2],   -sin[1]*np.cos(self.recip_ang_rad[0])],
-                    [0, 0,        sin[1]*np.sin(self.recip_ang_rad[0])]])
-        
-        self.real_v_inv = np.linalg.inv(self.real_v)
-        
-        #transposed so that each element of real_v is a vector a, b and c
-        real_v = np.transpose(self.real_v)
         Volume = np.linalg.det(self.real_v)
-        #transposed back to matrix multiply with miller indices
         
-        self.recip_v = np.transpose(np.array([
-                            np.cross(real_v[1], real_v[2]),
-                            np.cross(real_v[2], real_v[0]),
-                            np.cross(real_v[0], real_v[1])])/Volume)
-        
-        self.b_inverse = np.linalg.inv(self.recip_v)
+        self.recip_v = np.array([
+                    np.cross(self.real_v[1], self.real_v[2]),
+                    np.cross(self.real_v[2], self.real_v[0]),
+                    np.cross(self.real_v[0], self.real_v[1])])/Volume
         
     def indices_to_vectors(self, indices):
-        return np.sum(indices * self.recip_v, axis=1)
+        indices = np.array([indices])
+        return np.matmul(indices, self.recip_v)[0]
     
     def vector_to_indices(self, vector):
+        self.real_v_inv = np.linalg.inv(self.real_v)
+        self.b_inverse = np.linalg.inv(self.recip_v)
         return np.sum(vector * self.b_inverse, axis=1)
     
     def interplanar_distance(self, indices):
@@ -110,9 +105,9 @@ class Crystal:
         d_hkl = 1 / np.linalg.norm(H)
         return d_hkl
         
-    def orient(self):
-        self.z_vector = self.indices_to_vectors(self.z_indices)
-        self.x_vector = self.indices_to_vectors(self.x_indices)
+    def orient(self, z, x, approximation):
+        self.z_vector = self.indices_to_vectors(z)
+        self.x_vector = self.indices_to_vectors(x)
         
         self.y_vector = np.cross(self.z_vector, self.x_vector)
         
@@ -122,7 +117,7 @@ class Crystal:
         if  angle_zx == 0 or angle_zx == 180:
             raise ValueError('z and x directions are the same.')
         
-        if self.approximation != 'z':
+        if approximation != 'z':
             self.x_vector = self.rotate_vector(self.x_vector, 
                                                self.y_vector, 
                                                90 - angle_zx )
@@ -142,18 +137,12 @@ class Crystal:
         angle = np.deg2rad(ang)
         if angle == 0:
             return v
-
         u = np.sin(angle/2)*u
-        
         u0 = np.cos(angle/2)
-        
         u_conj = -u
-        
         uv = u0*v+np.cross(u,v)
         uv0 = -np.dot(u,v)
-        
         vr = uv0*u_conj + u0*uv + np.cross(uv, u_conj)
-        
         return vr
     
     def planes_in_family(self, ref, twin=False, twin_axis=None, 
@@ -217,8 +206,6 @@ class Crystal:
                 planeh = plane[0:2] + plane[3:]
                 planes_in_family.append(planeh)  # remove i from hkil
                 
-
-
         elif not plane_in_df:
             d_hkl = self.interplanar_distance(ref)
             # Takes indices of plane
@@ -337,7 +324,6 @@ class Crystal:
             DESCRIPTION.
 
         '''
-        
         if ref != None:
             self.planes_in_family(ref)
         
