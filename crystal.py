@@ -88,23 +88,6 @@ class Crystal:
                     np.cross(self.real_v[2], self.real_v[0]),
                     np.cross(self.real_v[0], self.real_v[1])])/Volume
         
-    def indices_to_vectors(self, indices):
-        indices = np.array([indices])
-        return np.matmul(indices, self.recip_v)[0]
-    
-    def vector_to_indices(self, vector):
-        self.real_v_inv = np.linalg.inv(self.real_v)
-        self.b_inverse = np.linalg.inv(self.recip_v)
-        return np.sum(vector * self.b_inverse, axis=1)
-    
-    def interplanar_distance(self, indices):
-        H = np.sum(indices * self.recip_v, axis=1)
-        if np.linalg.norm(H) == 0:
-            return 0
-        # Interplanar distance
-        d_hkl = 1 / np.linalg.norm(H)
-        return d_hkl
-        
     def orient(self, z, x, approximation):
         self.z_vector = self.indices_to_vectors(z)
         self.x_vector = self.indices_to_vectors(x)
@@ -126,6 +109,23 @@ class Crystal:
                                                self.y_vector, 
                                                angle_zx - 90 )
         
+    def indices_to_vectors(self, indices):
+        indices = np.array([indices])
+        return np.matmul(indices, self.recip_v)[0]
+    
+    def vector_to_indices(self, vector):
+        self.real_v_inv = np.linalg.inv(self.real_v)
+        self.b_inverse = np.linalg.inv(self.recip_v)
+        return np.sum(vector * self.b_inverse, axis=1)
+    
+    def interplanar_distance(self, indices):
+        H = np.sum(indices * self.recip_v, axis=1)
+        if np.linalg.norm(H) == 0:
+            return 0
+        # Interplanar distance
+        d_hkl = 1 / np.linalg.norm(H)
+        return d_hkl    
+    
     def angle_between_vectors(self, v1, v2):
         a = np.dot(v1, v2)/(np.linalg.norm(v1) * np.linalg.norm(v2))
         a_angle = np.rad2deg(np.arccos(np.round(a, 5)))
