@@ -241,10 +241,6 @@ class Crystal:
         self.dfs[df_nr]['Twin_axis'] = twin_axis
         self.dfs[df_nr]['Twin_angle'] = twin_angle
         self.dfs[df_nr]['df'] = df               
-        
-    def clear_plot(self):
-        self.dfs = {}
-        self.PF_plot()
 
     def calc_chi_phi(self, plane, twin, twin_axis, twin_angle, 
                         rotation, rotation_axis, rotation_angle):
@@ -327,9 +323,7 @@ class Crystal:
         if ref != None:
             self.planes_in_family(ref)
         
-        xlim = -1.4
-        xlim2 = xlim - 0.24
-        ylim = xlim + 0.05
+        
         number_pf_plots = 1
         for key in self.dfs:
             df = self.dfs[key]['df']
@@ -349,8 +343,6 @@ class Crystal:
                 y = (dip)/90 * np.sin(b_dirmuth)
             if sim:
                 a = self.ax.scatter(x, y, c=color,marker=marker, s=size)
-            
-        self.add_artists(self.ax, xlim, ylim, xlim2)
 
     def rotate_plot(self, rotation_axis, rotation_angle):
         self.rotation = True
@@ -385,19 +377,27 @@ class Crystal:
             left=False,
             labelbottom=False,
             labelleft=False)
+        xlim = -1.4
+        xlim2 = xlim - 0.24
+        ylim = xlim + 0.05    
+        self.add_artists(ax, xlim, ylim, xlim2)
         return fig, ax
-    
+    def clear_plot(self):
+        self.dfs = {}
+        self.fig, self.ax = self.set_plot()
+        self.PF_plot()
+        
     def add_artists(self, ax, xlim, ylim, xlim2, stereographic=False):
         circ = plt.Circle((0, 0), 1.0, facecolor='none', edgecolor='black')
-        self.ax.add_patch(circ)
+        ax.add_patch(circ)
 
-        self.ax.axis('equal')  # equal aspect ratio
-        self.ax.axis('off')  # remove the box
-        self.ax.add_artist(lines.Line2D([xlim + 0.05, xlim + 0.05], [-1, 1], 
+        ax.axis('equal')  # equal aspect ratio
+        ax.axis('off')  # remove the box
+        ax.add_artist(lines.Line2D([xlim + 0.05, xlim + 0.05], [-1, 1], 
                                         color='black', linewidth=1))
         
-        self.ax.set_xlim(-1.5, 1.3)
-        self.ax.set_ylim(-1.3, 1.3)
+        ax.set_xlim(-1.5, 1.3)
+        ax.set_ylim(-1.3, 1.3)
         ax.add_artist(lines.Line2D([xlim, ylim], [-1, -1], color='black', 
                                    linewidth=1))
         ax.add_artist(lines.Line2D([xlim, ylim], [1, 1], color='black', 
@@ -454,7 +454,6 @@ class Crystal:
                                   edgecolor='black', linewidth=0.25, 
                                   linestyle='dashed')
             ax.add_patch(circ)
-        return
     
     def save_fig(self, name):
         saves_dir = os.getcwd() + '/SavedFigures' 
