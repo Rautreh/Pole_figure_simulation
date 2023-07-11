@@ -260,10 +260,10 @@ class Crystal:
             
         chi = self.angle_between_vectors(self.z_vector, plane_vector)
         P_H = self.proj(plane_vector, self.z_vector)
-        # To see on which side of the Y plane is.
-        v1dot = np.dot(P_H, self.y_vector) 
         phi = self.angle_between_vectors(P_H, self.x_vector)
         
+        # To see on which side of the Y plane is.
+        v1dot = np.dot(P_H, self.y_vector) 
         if v1dot < 0:
             phi = 360 - phi
             
