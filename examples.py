@@ -6,7 +6,7 @@ from crystal import Crystal
 c1 = Crystal(mat='GaN', system = 'hex', z=[0,0,1], x = [1,1,0])
 
 #We add the 113 pole
-c1.add_pole([1,0,3], (1,-1,0), 0)
+c1.add_pole([1,0,3])
 #and save it under the name "113 GaN"
 #c1.save_fig('113 GaN')
 

@@ -290,7 +290,7 @@ class Crystal:
         proj = (v - np.dot(v, plane)/np.dot(plane, plane) * plane)
         return proj
     
-    def add_pole(self, ref, twin_axis, twin_angle):
+    def add_pole(self, ref, twin_axis=None, twin_angle=None):
         if twin_axis == None:
             twin = False
         else:
