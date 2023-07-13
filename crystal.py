@@ -91,7 +91,6 @@ class Crystal:
     def orient(self, z, x, approximation):
         self.z_vector = self.indices_to_vectors(z)
         self.x_vector = self.indices_to_vectors(x)
-        
         self.y_vector = np.cross(self.z_vector, self.x_vector)
         
         angle_zx = self.angle_between_vectors(self.z_vector, 
