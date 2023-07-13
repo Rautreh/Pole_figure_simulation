@@ -131,22 +131,21 @@ class Crystal:
         a_angle = np.rad2deg(np.arccos(np.round(a, 5)))
         return a_angle
 
-    def rotate_vector(self, v, u, ang):
-        #v = v/np.linalg.norm(v)
-        u = u/np.linalg.norm(u)
-        angle = np.deg2rad(ang)
-        if angle == 0:
+    def rotate_vector(self, v, v2, ang):
+        if ang == 0:
             return v
-        u = np.sin(angle/2)*u
+        
+        angle = np.deg2rad(ang)
+        u = np.sin(angle/2)*v2/np.linalg.norm(v2)
         u0 = np.cos(angle/2)
         u_conj = -u
-        uv = u0*v+np.cross(u,v)
-        uv0 = -np.dot(u,v)
-        vr = uv0*u_conj + u0*uv + np.cross(uv, u_conj)
+        w = u0*v+np.cross(u,v)
+        w0 = -np.dot(u,v)
+        vr = w0*u_conj + u0*w + np.cross(w, u_conj)
         return vr
     
     def planes_in_family(self, ref, twin=False, twin_axis=None, 
-                         twin_angle=None):
+                         twin_angle=None, axis='cr'):
         '''
         Parameters
         ----------
@@ -225,7 +224,7 @@ class Crystal:
             chi, phi = self.calc_chi_phi(
                         plane, twin, twin_axis, 
                         twin_angle, self.rotation, 
-                        self.rotation_axis, self.rotation_angle)
+                        self.rotation_axis, self.rotation_angle, axis)
             
             chis.append(chi)
             phis.append(phi)
@@ -243,15 +242,26 @@ class Crystal:
         self.dfs[df_nr]['df'] = df               
 
     def calc_chi_phi(self, plane, twin, twin_axis, twin_angle, 
-                        rotation, rotation_axis, rotation_angle):
+                        rotation, rotation_axis, rotation_angle, 
+                        axis='cr'):
         
         plane_vector = self.indices_to_vectors(plane)
         if twin:
-            twin_vector = self.indices_to_vectors(twin_axis)
+            if axis=='x':
+                twin_vector=self.x_vector
+            elif axis=='y':
+                twin_vector=self.y_vector
+            elif axis == 'a':
+                twin_vector=self.real_v[0]
+            elif axis == 'b':
+                twin_vector=self.real_v[1]
+            elif axis == 'c':
+                twin_vector=self.real_v[2]
+            else:
+                twin_vector = self.indices_to_vectors(twin_axis)
             plane_vector = self.rotate_vector(plane_vector, 
                                               twin_vector, 
-                                              twin_angle)
-            
+                                              twin_angle) 
         if rotation:
             rotation_vector = self.indices_to_vectors(rotation_axis)
             plane_vector = self.rotate_vector(plane_vector, 
@@ -293,12 +303,20 @@ class Crystal:
     def add_pole(self, ref, twin_axis=None, twin_angle=None):
         if twin_axis == None:
             twin = False
+            axis = None
         else:
             twin = True
+            if (twin_axis=='y' or twin_axis=='x' or twin_axis=='a'
+                or twin_axis=='b' or twin_axis=='c'):
+                axis=twin_axis
+                twin_axis == None
+            else:
+                twin = True
+                axis = 'cr'  
         self.planes_in_family(ref, twin=twin, 
                               twin_axis=twin_axis, 
-                              twin_angle=twin_angle)
-        
+                              twin_angle=twin_angle,
+                              axis=axis)
         self.PF_plot()
 
     def PF_plot(self, ref=None, sim=True, stereographic=False, scale='log'):
@@ -331,8 +349,10 @@ class Crystal:
             marker = self.markers[str(number_pf_plots)]['marker']
             size = self.markers[str(number_pf_plots)]['size']
             number_pf_plots += 1
+            df = df.sort_values(by=['phi', 'chi'])
             b_dirmuth = np.deg2rad(df.phi.to_numpy())
             dip = df.chi.to_numpy()
+            
             # Rigaku data is given reversed
             reverse = not sim
             if reverse:
@@ -342,7 +362,7 @@ class Crystal:
                 x = (dip)/90 * np.cos(b_dirmuth)
                 y = (dip)/90 * np.sin(b_dirmuth)
             if sim:
-                a = self.ax.scatter(x, y, c=color,marker=marker, s=size)
+                a = self.ax.scatter(x, y, c=color, marker=marker, s=size)
 
     def rotate_plot(self, rotation_axis, rotation_angle):
         self.rotation = True
@@ -367,7 +387,8 @@ class Crystal:
         
     def set_plot(self):
 
-        fig, ax = plt.subplots(dpi=600)
+        fig = plt.figure(dpi=600)
+        ax = fig.add_subplot()
 
         ax.tick_params(
             axis='both',
@@ -425,23 +446,24 @@ class Crystal:
         if stereographic:
             r = np.tan((np.pi / 4.0) - (np.deg2rad(60) / 2)) * np.sin(90)
         else:
-            r = 30/90
+            r = 0/90
 
         for x in range(0, 360, 45):
             xcoords = (r*np.sin(np.deg2rad(x)), np.sin(np.deg2rad(x)))
             ycoords = (r*np.cos(np.deg2rad(x)), np.cos(np.deg2rad(x)))
+
             if x == 0:
                 txtcoords = (1.13*np.cos(np.deg2rad(x)), 
                              1.13*np.sin(np.deg2rad(x)))
             else:
                 txtcoords = (1.16*np.cos(np.deg2rad(x)), 
                              1.16*np.sin(np.deg2rad(x)))
-            ax.text(txtcoords[0], txtcoords[1], str(x) + 
-                    '$^\circ$', ha='center', va='center')
+            #ax.text(txtcoords[0], txtcoords[1], str(x) + 
+            #        '$^\circ$', ha='center', va='center')
 
             ax.add_artist(lines.Line2D(xcoords, ycoords, 
-                                       color='black', linewidth=0.25))
-
+                                       color='grey', linewidth=0.25))
+            
         for x in range(0, 90, 30):
             if stereographic:
                 dip = np.deg2rad(90 - x)
